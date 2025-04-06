@@ -1,0 +1,136 @@
+/**
+ * Credits:
+ * Script created by Benjamin Wenner
+ * Contact: bw@benjaminwenner.com
+ * Website: benjaminwenner.com
+ * 
+ * For support requests or customizations, please reach out to Benjamin Wenner directly.
+ * 
+ * Instructions:
+ * 1. Create a new Google Sheet or use an existing one and copy its URL
+ * 2. Replace the SPREADSHEET_URL constant with your Google Sheet URL
+ * 3. Replace SHEET_NAME with the name of the sheet to export data to
+ * 4. Run the script in Google Ads > Tools & Settings > Bulk Actions > Scripts
+ */
+
+// Configuration
+const SPREADSHEET_URL = 'https://docs.google.com/spreadsheets/d/1dwHU606prorGiBCJFRRk4aRUAoQj4IGNwKpBoIChIug/edit?gid=1218540633#gid=1218540633'; // Replace with your spreadsheet URL
+const SHEET_NAME = 'Search Terms'; // Replace with your sheet name
+const DATE_RANGE = 'LAST_30_DAYS';
+const START_ROW = 3; // Start writing data from row 3
+
+function main() {
+  try {
+    // Open the spreadsheet
+    const spreadsheet = SpreadsheetApp.openByUrl(SPREADSHEET_URL);
+    
+    // Get the specified sheet
+    let sheet = spreadsheet.getSheetByName(SHEET_NAME);
+    if (!sheet) {
+      Logger.log(`Sheet "${SHEET_NAME}" not found. Creating a new sheet.`);
+      sheet = spreadsheet.insertSheet(SHEET_NAME);
+      
+      // Add headers if creating a new sheet
+      const headers = [
+        'Search Term', 
+        'Translation', 
+        'Impressions', 
+        'Clicks', 
+        'CTR',
+        'Cost',
+        'Conversions',
+        'Campaign', 
+        'Ad Group'
+      ];
+      sheet.getRange(2, 1, 1, headers.length).setValues([headers]);
+      sheet.getRange(2, 1, 1, headers.length).setFontWeight('bold');
+    }
+    
+    // Clear existing data (but ONLY columns A and C-I, preserving column B formulas)
+    const lastRow = Math.max(sheet.getLastRow(), START_ROW);
+    
+    // Clear column A (Search Terms)
+    if (lastRow > START_ROW - 1) {
+      sheet.getRange(START_ROW, 1, lastRow - START_ROW + 1, 1).clear();
+    }
+    
+    // Clear columns C-I (Metrics and Campaign info)
+    if (lastRow > START_ROW - 1) {
+      sheet.getRange(START_ROW, 3, lastRow - START_ROW + 1, 7).clear();
+    }
+    
+    // Create the search terms report
+    const report = AdsApp.report(
+      `SELECT 
+        Query, 
+        Impressions, 
+        Clicks, 
+        Ctr, 
+        Cost, 
+        Conversions,
+        CampaignName, 
+        AdGroupName
+       FROM SEARCH_QUERY_PERFORMANCE_REPORT
+       WHERE Clicks >= 1
+       DURING ${DATE_RANGE}`
+    );
+    
+    // Fetch the report rows
+    const rows = report.rows();
+    const searchTermData = [];
+    
+    // Process each row
+    while (rows.hasNext()) {
+      const row = rows.next();
+      searchTermData.push([
+        row['Query'],
+        '', // Empty cell for translation (Column B)
+        parseInt(row['Impressions'], 10),
+        parseInt(row['Clicks'], 10),
+        row['Ctr'],
+        parseFloat(row['Cost'].replace(/,/g, '')),
+        parseFloat(row['Conversions']),
+        row['CampaignName'],
+        row['AdGroupName']
+      ]);
+    }
+    
+    // Write data to spreadsheet
+    if (searchTermData.length > 0) {
+      // Split data for writing to preserve column B formulas
+      const searchTermColumn = searchTermData.map(row => [row[0]]);
+      const metricsColumns = searchTermData.map(row => row.slice(2)); // Skip column B
+      
+      // Write search terms to column A
+      sheet.getRange(START_ROW, 1, searchTermData.length, 1).setValues(searchTermColumn);
+      
+      // Write metrics and campaign info to columns C-I
+      sheet.getRange(START_ROW, 3, searchTermData.length, 7).setValues(metricsColumns);
+      
+      // Auto-resize columns for better readability
+      for (let i = 1; i <= 9; i++) {
+        sheet.autoResizeColumn(i);
+      }
+      
+      // Apply formatting
+      sheet.getRange(START_ROW, 3, searchTermData.length, 1).setNumberFormat('#,##0'); // Impressions
+      sheet.getRange(START_ROW, 4, searchTermData.length, 1).setNumberFormat('#,##0'); // Clicks
+      sheet.getRange(START_ROW, 5, searchTermData.length, 1).setNumberFormat('0.00%'); // CTR
+      sheet.getRange(START_ROW, 6, searchTermData.length, 1).setNumberFormat('$#,##0.00'); // Cost
+      sheet.getRange(START_ROW, 7, searchTermData.length, 1).setNumberFormat('#,##0.00'); // Conversions
+      
+      Logger.log(`Successfully exported ${searchTermData.length} search terms with at least 1 click to the spreadsheet.`);
+    } else {
+      Logger.log('No search terms with at least 1 click found for the specified date range.');
+    }
+    
+    // Add signature to the log
+    Logger.log('');
+    Logger.log('Script by Benjamin Wenner (benjaminwenner.com)');
+    Logger.log('For support: bw@benjaminwenner.com');
+    
+  } catch (e) {
+    Logger.log('Error: ' + e.message);
+    Logger.log('For support with this error, please contact Benjamin Wenner at bw@benjaminwenner.com');
+  }
+}
