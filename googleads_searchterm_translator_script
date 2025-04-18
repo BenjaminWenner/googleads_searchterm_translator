@@ -7,14 +7,13 @@
  * For support requests or customizations, please reach out to Benjamin Wenner directly.
  * 
  * Instructions:
- * 1. Create a new Google Sheet or use an existing one and copy its URL
+ * 1. Make a copy of this spreadsheet: https://docs.google.com/spreadsheets/d/1dwHU606prorGiBCJFRRk4aRUAoQj4IGNwKpBoIChIug/copy
  * 2. Replace the SPREADSHEET_URL constant with your Google Sheet URL
- * 3. Replace SHEET_NAME with the name of the sheet to export data to
- * 4. Run the script in Google Ads > Tools & Settings > Bulk Actions > Scripts
+ * 3. Run the script in Google Ads > Tools & Settings > Bulk Actions > Scripts
  */
 
 // Configuration
-const SPREADSHEET_URL = 'https://docs.google.com/spreadsheets/d/1dwHU606prorGiBCJFRRk4aRUAoQj4IGNwKpBoIChIug/edit?gid=1218540633#gid=1218540633'; // Replace with your spreadsheet URL
+const SPREADSHEET_URL = 'https://docs.google.com/spreadsheets/d/1dwHU606prorGiBCJFRRk4aRUAoQj4IGNwKpBoIChIug/copy'; // Replace with your spreadsheet URL
 const SHEET_NAME = 'Search Terms'; // Replace with your sheet name
 const DATE_RANGE = 'LAST_30_DAYS';
 const START_ROW = 3; // Start writing data from row 3
